@@ -5,9 +5,10 @@ import datetime
 SERVER = socket.gethostbyname(socket.gethostname())
 PORT = 6464
 ADDRESS = SERVER, PORT
-HEADER = 60
+HEADER = 10
 FORMAT = 'UTF-8'
 BUFFER = 1024
+SEPARATOR = "<SEPARATOR>".encode(FORMAT)
 
 set_username = input("Enter a username: ")
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -22,6 +23,7 @@ while True:
     message = input(f"{set_username} > ")
     if message:
         message = message.encode(FORMAT)
+        message = username + SEPARATOR + message 
         message_header = f"{len(message):<{HEADER}}".encode(FORMAT)
         client_socket.send(message_header + message)
 

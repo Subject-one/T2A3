@@ -1,5 +1,6 @@
 import socket
 import threading
+import sys
 
 # Set constants
     # Define PORT. Numbers above 5000 are generally unused. 
@@ -19,6 +20,12 @@ server.bind(ADDRESS)
 
 
 class Server:
+    def __init__(self, server="127.0.1.1", port=6050):
+        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server.bind((server, port))
+        
+
+
     def connect(conn, addr):
         connected = True
         while connected:
@@ -26,12 +33,22 @@ class Server:
             message = int(message)
             msg = conn.recv(message).decode(FORMAT)
 
-    def start():
-        server.listen()
-        while True:
-            conn, addr = server.accept()
-            thread = threading.Thread.__init__(args=(conn, addr))
-            thread.start()
+
+    def start(self):
+        self.server.listen(5)
+        # while True:
+        #     conn, addr = server.accept()
+            # thread = threading.Thread.__init__(args=(conn, addr))
+            # thread.start()
+
+class Users:
+    
+
+
+my_server = Server()
+my_server.start()
+print(type(my_server.server))
+
             
 
 

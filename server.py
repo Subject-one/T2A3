@@ -6,9 +6,10 @@ import select
 SERVER = socket.gethostbyname(socket.gethostname())
 PORT = 6464
 ADDRESS = SERVER, PORT
-HEADER = 60
+HEADER = 10
 FORMAT = 'UTF-8'
 BUFFER = 1024
+SEPARATOR = "<SEPARATOR>"
 
 # Address Family Internet, IPv4, TCP
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -18,12 +19,24 @@ server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
 server_socket.bind(ADDRESS)
-server_socket.listen()
+server_socket.listen(5)
 
 active_sockets = [server_socket]
 
 # Use a dictionary to hold user information
 users = {}
+
+class Message():
+    def __init__(self, text):
+        self.text = text.decode(FORMAT).strip("b'")
+        self.user, separator, self.message = self.text.partition(SEPARATOR)
+        print(type(self.user))
+
+
+    def __repr__(self) -> str:
+        return self.user + ":" + self.message
+
+
 
 def receive_msg(client_socket):
     try: 
@@ -47,8 +60,9 @@ while True:
             user = receive_msg(client_socket)
             if user is False:
                 continue
+            print(user)
 
-            active_sockets.appened(client_socket)
+            active_sockets.append(client_socket)
             users[client_socket] = user
             print(f"New Connection")
 
@@ -61,8 +75,10 @@ while True:
                 continue
             user = users[notified_socket]
             print("Message")
+            print(Message(message['data']))
 
             for client_socket in users:
+                print(users)
                 if client_socket != notified_socket:
                     client_socket.send(user['header'] + user['data'] + message['header'] + message['data'])
         for notified_socket in exception_sockets:

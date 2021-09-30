@@ -1,3 +1,5 @@
+import tqdm
+
 class Message():
     def __init__(self, text: str):
         self.text = text.strip("b'")
@@ -43,7 +45,7 @@ with open(filename, "wb") as f:
 
 client_socket.close()
 server.close()
-\
+
 
 
 
