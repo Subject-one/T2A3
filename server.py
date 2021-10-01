@@ -90,7 +90,7 @@ while True:
             active_sockets.remove(notified_socket)
             del users[notified_socket]
 
-    thread = threading.Thread(target=receive_msg, args=(client_socket))
-    thread.start()
+    # thread = threading.Thread(target=receive_msg, args=(client_socket))
+    # thread.start()
 
 
