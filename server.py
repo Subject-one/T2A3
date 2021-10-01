@@ -1,5 +1,6 @@
 import socket
 import select
+import threading
 
 
 # Set useful constants
@@ -47,6 +48,10 @@ def receive_msg(client_socket):
         return {"header": receive_header, "data": client_socket.recv(msg_len)}
     except:
         return False
+    """Handles receiving messages.
+    
+    
+    """
 
 
 while True:
@@ -84,5 +89,8 @@ while True:
         for notified_socket in exception_sockets:
             active_sockets.remove(notified_socket)
             del users[notified_socket]
+
+    thread = threading.Thread(target=receive_msg, args=(client_socket))
+    thread.start()
 
 

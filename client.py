@@ -1,6 +1,6 @@
 import socket
+from server import receive_msg
 import sys
-import datetime
 
 SERVER = socket.gethostbyname(socket.gethostname())
 PORT = 6464
@@ -18,6 +18,7 @@ client_socket.setblocking(False)
 username = set_username.encode(FORMAT)
 username_header = f"{len(username):<{HEADER}}".encode(FORMAT)
 client_socket.send(username_header + username)
+
 
 while True:
     message = input(f"{set_username} > ")
