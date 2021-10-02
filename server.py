@@ -1,96 +1,124 @@
 import socket
 import select
-import threading
+from datetime import datetime, timedelta
+import sys
 
-
-# Set useful constants
-SERVER = socket.gethostbyname(socket.gethostname())
-PORT = 6464
+SERVER = '127.0.0.1'
+PORT = 6050
 ADDRESS = SERVER, PORT
 HEADER = 10
 FORMAT = 'UTF-8'
 BUFFER = 1024
 SEPARATOR = "<SEPARATOR>"
 
-# Address Family Internet, IPv4, TCP
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-# Set, Set Attribute, Set Item True
-# Will allow users to reconnect to chat
-server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-server_socket.bind(ADDRESS)
-server_socket.listen(5)
-
-active_sockets = [server_socket]
-
-# Use a dictionary to hold user information
-users = {}
-
-class Message():
+class Message:
     def __init__(self, text):
         self.text = text.decode(FORMAT).strip("b'")
         self.user, separator, self.message = self.text.partition(SEPARATOR)
-        print(type(self.user))
 
 
     def __repr__(self) -> str:
-        return self.user + ":" + self.message
+        return self.user + ": " + self.message
 
 
+class Server:
+    def __init__(self, server="", port=6050):
+        # Address Family Internet, IPv4, TCP
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Set, Set Attribute, Set Item True
+        # Will allow users to reconnect to chat
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.server_socket.bind((server, port))
+        self.active_sockets = [self.server_socket]
+        self.users = {}
+        print(f"Server has successfully launched on {SERVER}")
+        print("=============================================")
+        """Begins the setup process for a server.
 
-def receive_msg(client_socket):
-    try: 
-        receive_header = client_socket.recv(HEADER)
-        if not len(receive_header):
+        Sets the server to IPv4 TCP. 
+        Will attempt to allow and users to reconnect.
+        Bind to the ip and port given in initialise method.
+        Holds any open actively connected connections.
+        Creates a dictionary for users.
+
+        Args:
+            self: create the instance of the class.
+            server: leaves an empty string for server IP to fill.
+            port: sets the port to connect to.
+        """
+
+
+    def receive_msg(self, client_socket):
+        try: 
+            receive_header = client_socket.recv(HEADER)
+            if not len(receive_header):
+                return False
+            msg_len = int(receive_header.decode(FORMAT).strip())
+            return {"header": receive_header, "data": client_socket.recv(msg_len)}
+        except:
             return False
-        msg_len = int(receive_header.decode(FORMAT).strip())
-        return {"header": receive_header, "data": client_socket.recv(msg_len)}
-    except:
-        return False
-    """Handles receiving messages.
-    
-    
-    """
 
 
-while True:
-    # Read list, write list and error list
-    read_sockets, _, exception_sockets = select.select(active_sockets, [], active_sockets)
-
-    for notified_socket in read_sockets:
-        if notified_socket == server_socket:
-            client_socket, client_address = server_socket.accept()
-
-            user = receive_msg(client_socket)
-            if user is False:
-                continue
-            print(user)
-
-            active_sockets.append(client_socket)
-            users[client_socket] = user
-            print(f"New Connection")
-
-        else:
-            message = receive_msg(notified_socket)
-            if message is False:
-                print("User left")
-                active_sockets.remove(notified_socket)
-                del users[notified_socket]
-                continue
-            user = users[notified_socket]
-            print("Message")
-            print(Message(message['data']))
-
-            for client_socket in users:
-                print(users)
-                if client_socket != notified_socket:
-                    client_socket.send(user['header'] + user['data'] + message['header'] + message['data'])
-        for notified_socket in exception_sockets:
-            active_sockets.remove(notified_socket)
-            del users[notified_socket]
-
-    # thread = threading.Thread(target=receive_msg, args=(client_socket))
-    # thread.start()
+    def join_msg_strip(self, text):
+        text = text.decode(FORMAT).strip("b'")
+        return text
 
 
+    def comms(self):
+        time = (datetime.now() + timedelta(hours=5)).strftime('%H:%M')
+  
+        while True:
+            try:
+            # Read list, write list and error list
+                read_sockets, _, exception_sockets = select.select(self.active_sockets, [], self.active_sockets)
+
+                for notified_socket in read_sockets:
+                    if notified_socket == self.server_socket:
+                        client_socket, client_address = self.server_socket.accept()
+                        user = self.receive_msg(client_socket)
+                        if user is False:
+                            continue
+
+                        self.active_sockets.append(client_socket)
+                        self.users[client_socket] = user
+                        print(f"{self.join_msg_strip(user['data'])} has joined.")
+
+                    else:
+                        message = self.receive_msg(notified_socket)
+                        if message is False:
+                            self.active_sockets.remove(notified_socket)
+                            del self.users[notified_socket]
+                            continue
+                        user = self.users[notified_socket]
+                        print(time)
+                        print(Message(message['data']))
+
+                        for client_socket in self.users:
+                            if client_socket != notified_socket:
+                                client_socket.send(user['header'] + user['data'] + message['header'] + message['data'])
+                    for notified_socket in exception_sockets:
+                        self.active_sockets.remove(notified_socket)
+                        del self.users[notified_socket]
+
+            except KeyboardInterrupt:
+                self.destroy()
+
+
+    def start(self):
+        self.server_socket.listen(5)
+
+
+    def destroy(self):
+        self.server_socket.shutdown(1)
+        # Removes ^C by backspacing each time chr(8) is used.
+        # Gets the character that represents the unicode 8.
+        print(chr(8) + chr(8) + "Server is shutting down...")
+        self.server_socket.close()
+        sys.exit()
+
+
+server = Server(port=PORT)
+server.start()
+server.comms()

@@ -33,7 +33,10 @@ class Client:
             try:
                 message = input(f"{self.set_username}: ")
                 if message:
-                    self.send_msg(message)
+                    message = message.encode(FORMAT)
+                    message = self.username + SEPARATOR + message 
+                    message_header = f"{len(message):< {HEADER}}".encode(FORMAT)
+                    self.client_socket.send(message_header + message)
 
             except KeyboardInterrupt:
                 self.destroy(True)
@@ -66,7 +69,7 @@ class Client:
             # Removes ^C by backspacing each time chr(8) is used.
             # Gets the character that represents the unicode 8.
             print(chr(8) + chr(8) + "Disconnecting from server..")
-            self.send_msg(f"has left the server.")
+            self.send_msg(f"{self.username.decode(FORMAT).strip('b')} has left the server.")
             self.client_socket.shutdown(1)
             self.client_socket.close()
             sys.exit()
